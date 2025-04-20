@@ -1,10 +1,10 @@
 output "cluster_name" {
   description = "Cluster name"
-  value       = google_container_cluster.primary.name
+  value       = module.gke.cluster_name
 }
 
 output "node_pool_name" {
-  value = google_container_node_pool.primary_nodes.name
+  value = module.gke.node_pool_name
 }
 
 output "region" {
@@ -19,5 +19,5 @@ output "project_id" {
 
 output "cluster_endpoint" {
   description = "GKE Cluster Host/Endpoint"
-  value       = google_container_cluster.primary.endpoint
+  value       = module.gke.cluster_endpoint
 }

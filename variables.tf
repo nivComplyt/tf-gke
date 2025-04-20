@@ -1,3 +1,4 @@
+############################## Project ##############################
 variable "project_id" {
   description = "The project ID to host the cluster in"
   type        = string
@@ -10,6 +11,14 @@ variable "region" {
   default     = "us-central1"
 }
 
+############################## Network ##############################
+variable "vpc_cidr" {
+  description = "CIDR block for custom VPC subnet"
+  type        = string
+  default     = "10.10.0.0/16"
+}
+
+############################## GKE ##############################
 variable "cluster_name" {
   description = "The name for the GKE cluster"
   type        = string
@@ -44,10 +53,4 @@ variable "max_node_count" {
   description = "Maximum number of nodes for autoscaling"
   type        = number
   default     = 3
-}
-
-variable "vpc_cidr" {
-  description = "CIDR block for custom VPC subnet"
-  type        = string
-  default     = "10.10.0.0/16"
 }
