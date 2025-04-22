@@ -3,7 +3,7 @@ resource "google_container_cluster" "primary" {
   location = var.region
 
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 3
   deletion_protection      = false
 
   network    = var.network

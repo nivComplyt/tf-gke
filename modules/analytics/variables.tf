@@ -1,16 +1,8 @@
-variable "app_name" {
-  description = "Name of the app"
-  type        = string
-  default = "analytics"
-}
-
-variable "image" {
-  description = "Container image for deployment"
-  type        = string
-  default = 
-}
-
-variable "port" {
-  description = "Container port exposed"
-  type        = number
-}
+#  variable "app_name" {}
+#  variable "image" {}
+#  variable "replicas" {}
+#  variable "port" {}
+#  variable "docker_username" {}
+#  variable "docker_password" {}
+#  variable "tls_cert" {}
+#  variable "tls_key" {}

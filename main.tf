@@ -18,16 +18,52 @@ module "gke" {
   subnetwork     = module.network.subnet_id
 }
 
+module "istio" {
+  source            = "./modules/istio"
+  istio_version     = var.istio_version
+  inject_namespaces = var.inject_namespaces
+  argocd_tls_crt    = var.argocd_tls_crt
+  argocd_tls_key    = var.argocd_tls_key
+  tls_secret_name   = "argocd-tls"
+
+  providers = {
+    helm       = helm
+    kubernetes = kubernetes
+  }
+
+  depends_on = [module.gke]
+}
+
+module "argocd" {
+  source           = "./modules/argocd"
+  argocd_namespace = var.argocd_namespace
+  argocd_version   = var.argocd_version
+  argocd_tls_crt   = var.argocd_tls_crt
+  argocd_tls_key   = var.argocd_tls_key
+  tls_secret_name  = "argocd-tls"
+  argocd_domain    = var.argocd_domain
+
+  providers = {
+    helm       = helm
+    kubernetes = kubernetes
+    #kubectl    = kubectl
+  }
+
+  depends_on = [module.istio]
+}
+
 # module "analytics" {
-#   source      = "./modules/analytics"
-#   app_name    = "analytics"
-#   image       = "complyt/analytics:latest"
-#   port        = 8080
+#   source          = "./modules/analytics"
+#   app_name        = var.app_name
+#   image           = var.image
+#   replicas        = var.replicas
+#   port            = var.port
+#   docker_username = var.docker_username
+#   docker_password = var.docker_password
+#   tls_cert        = var.tls_cert
+#   tls_key         = var.tls_key
+#   providers = {
+#     kubernetes = kubernetes
+#   }
 # }
-# 
-# module "app2" {
-#   source      = "./modules/autofiling"
-#   app_name    = "autofiling"
-#   image       = "complyt/autofiling-nc:latest"
-#   port        = 80
-# }
+
