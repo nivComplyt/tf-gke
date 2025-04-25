@@ -12,10 +12,30 @@ variable "region" {
 }
 
 ############################## Network ##############################
-variable "vpc_cidr" {
-  description = "CIDR block for custom VPC subnet"
+variable "vpc_name" {
+  description = "The name of the VPC"
   type        = string
-  default     = "10.10.0.0/16"
+  default     = "internal-vpc"
+}
+
+variable "private_subnet_name" {
+  description = "The name of the private subnet"
+  type        = string
+  default     = "internal-private-subnet"
+}
+
+variable "public_subnet_name" {
+  description = "The name of the public subnet"
+  type        = string
+  default     = "internal-public-subnet"
+}
+
+variable "public_cidr" {
+  default = "10.10.1.0/24"
+}
+
+variable "private_cidr" {
+  default = "10.10.2.0/24"
 }
 
 ############################## GKE ##############################
@@ -23,6 +43,18 @@ variable "cluster_name" {
   description = "The name for the GKE cluster"
   type        = string
   default     = "demo-cluster"
+}
+
+variable "public_pool_name" {
+  description = "The name for the GKE public nodes pool"
+  type        = string
+  default     = "public-pool"
+}
+
+variable "private_pool_name" {
+  description = "The name for the GKE private nodes pool"
+  type        = string
+  default     = "private-pool"
 }
 
 variable "env_name" {
@@ -34,25 +66,49 @@ variable "env_name" {
 variable "machine_type" {
   description = "Type of machine to use for nodes"
   type        = string
-  default     = "e2-medium"
+  default     = "t2a-standard-4"
 }
 
-variable "node_count" {
-  description = "Initial number of nodes"
+variable "node_locations" {
+  description = "Location of machines to use for nodes"
+  type        = list(string)
+  default     = ["us-central1-a", "us-central1-b", "us-central1-f"]
+}
+
+variable "public_node_count" {
+  description = "Initial number of public subnet nodes"
   type        = number
   default     = 1
 }
 
-variable "min_node_count" {
-  description = "Minimum number of nodes for autoscaling"
+variable "private_node_count" {
+  description = "Initial number of private subnet nodes"
+  type        = number
+  default     = 10
+}
+
+variable "min_public_node_count" {
+  description = "Minimum number of public nodes for autoscaling"
+  type        = number
+  default     = 1
+}
+
+variable "max_public_node_count" {
+  description = "Maximum number of public nodes for autoscaling"
   type        = number
   default     = 2
 }
 
-variable "max_node_count" {
-  description = "Maximum number of nodes for autoscaling"
+variable "min_private_node_count" {
+  description = "Minimum number of private nodes for autoscaling"
   type        = number
   default     = 5
+}
+
+variable "max_private_node_count" {
+  description = "Maximum number of priavte nodes for autoscaling"
+  type        = number
+  default     = 15
 }
 
 ############################## Istio ##############################
@@ -85,12 +141,14 @@ variable "argocd_tls_crt" {
   description = "Base64-encoded TLS certificate"
   type        = string
   sensitive   = true
+  default     = "./secrets/argocd.crt"
 }
 
 variable "argocd_tls_key" {
   description = "Base64-encoded TLS private key"
   type        = string
   sensitive   = true
+  default     = "./secrets/argocd.key"
 }
 
 variable "tls_secret_name" {
@@ -105,53 +163,19 @@ variable "argocd_domain" {
   default     = "argocd.complyt.cloud"
 }
 
-############################## Docker Cradentials ##############################
-variable "docker_username" {
-  description = "Docker Hub username"
-  type        = string
-  sensitive   = true
-}
-
-variable "docker_password" {
-  description = "Docker Hub password"
-  type        = string
-  sensitive   = true
-}
-
-# ############################## Analytics App ##############################
-# variable "app_name" {
-#   description = "Name of the app"
-#   type        = string
-#   default     = "analytics"
-# }
-# 
-# variable "image" {
-#   description = "Container image for analytics app deployment"
-#   type        = string
-#   default     = "complyt/analytics:latest"
-# }
-# 
-# variable "replicas" {
-#   description = "Container replicas for deployment"
-#   type        = string
-#   default     = 2
-# }
-# 
-# variable "port" {
-#   description = "Container port exposed"
-#   type        = number
-#   default     = 3000
-# }
-# 
-# variable "tls_cert" {
-#   description = "Base64-encoded TLS certificate"
+# variable "github_app_pem" {
+#   description = "Path for GitHub App private key"
 #   type        = string
 #   sensitive   = true
+#   default     = "./secrets/github-app.pem"
 # }
-# 
-# variable "tls_key" {
-#   description = "Base64-encoded TLS private key"
-#   type        = string
-#   sensitive   = true
-# }
-# 
+
+variable "github_app_id" {
+  description = "GitHub App ID"
+  type        = string
+}
+
+variable "github_app_installation_id" {
+  description = "GitHub App Installation ID"
+  type        = string
+}

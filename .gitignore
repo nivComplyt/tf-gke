@@ -38,3 +38,7 @@ terraform.rc
 
 # Ignore kubectl
 kubectl
+
+# Ignore certs and secrets dir
+certs/
+secrets/

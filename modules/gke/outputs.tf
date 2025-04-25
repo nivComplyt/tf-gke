@@ -2,8 +2,12 @@ output "cluster_name" {
   value = google_container_cluster.primary.name
 }
 
-output "node_pool_name" {
-  value = google_container_node_pool.primary_nodes.name
+output "public_node_pool_name" {
+  value = google_container_node_pool.public_pool.name
+}
+
+output "private_node_pool_name" {
+  value = google_container_node_pool.private_pool.name
 }
 
 output "cluster_endpoint" {

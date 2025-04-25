@@ -1,3 +1,9 @@
+resource "kubernetes_namespace" "istio_ingress" {
+  metadata {
+    name = "istio-ingress"
+  }
+}
+
 resource "helm_release" "istio_base" {
   name       = "istio-base"
   repository = "https://istio-release.storage.googleapis.com/charts"
@@ -13,6 +19,21 @@ resource "helm_release" "istiod" {
   chart      = "istiod"
   version    = var.istio_version
   namespace  = "istio-system"
+  timeout    = 360
+
+  values = [
+    yamlencode({
+      tolerations = [
+        {
+          key      = "kubernetes.io/arch"
+          operator = "Equal"
+          value    = "arm64"
+          effect   = "NoSchedule"
+        }
+      ]
+    })
+  ]
+
   depends_on = [helm_release.istio_base]
 }
 
@@ -29,6 +50,10 @@ resource "helm_release" "istio_ingress" {
     yamlencode({
       service = {
         type = "LoadBalancer"
+        # loadBalancerIP = null   # For VPN
+        # annotations = {
+        #   "cloud.google.com/load-balancer-type" = "Internal"
+        # }
         ports = [
           {
             name       = "http"
@@ -53,6 +78,33 @@ resource "helm_release" "istio_ingress" {
           name          = "https"
           port          = 8443
           targetPort    = 8443
+        }
+      ]
+
+      affinity = {
+        nodeAffinity = {
+          requiredDuringSchedulingIgnoredDuringExecution = {
+            nodeSelectorTerms = [
+              {
+                matchExpressions = [
+                  {
+                    key      = "role"
+                    operator = "In"
+                    values   = ["public"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+
+      tolerations = [
+        {
+          key      = "kubernetes.io/arch"
+          operator = "Equal"
+          value    = "arm64"
+          effect   = "NoSchedule"
         }
       ]
 
@@ -83,11 +135,10 @@ resource "kubernetes_secret" "tls" {
     name      = var.tls_secret_name
     namespace = "istio-ingress"
   }
-
   type = "kubernetes.io/tls"
-
   data = {
     "tls.crt" = base64encode(var.argocd_tls_crt)
     "tls.key" = base64encode(var.argocd_tls_key)
   }
+  depends_on = [kubernetes_namespace.istio_ingress]
 }

@@ -1,7 +1,6 @@
-resource "kubernetes_namespace" "argocd" {
-  metadata {
-    name = var.argocd_namespace
-  }
+locals {
+  github_app_pem = trimspace(file("${path.root}/secrets/github-app.pem"))
+  #github_app_pem_b64 = base64encode(local.github_app_pem)
 }
 
 resource "kubernetes_secret" "tls" {
@@ -13,19 +12,8 @@ resource "kubernetes_secret" "tls" {
   type = "kubernetes.io/tls"
 
   data = {
-    "tls.crt" = base64encode(var.argocd_tls_crt)
-    "tls.key" = base64encode(var.argocd_tls_key)
-  }
-}
-
-resource "kubernetes_config_map" "cmd_params" {
-  metadata {
-    name      = "argocd-cmd-params-cm"
-    namespace = "argocd"
-  }
-
-  data = {
-    "server.insecure" = "true"
+    "tls.crt" = var.argocd_tls_crt
+    "tls.key" = var.argocd_tls_key
   }
 }
 
@@ -35,7 +23,7 @@ resource "kubernetes_manifest" "gateway" {
     kind       = "Gateway"
     metadata = {
       name      = "argocd-gateway"
-      namespace = var.argocd_namespace
+      namespace = "istio-ingress"
     }
     spec = {
       selector = {
@@ -63,7 +51,7 @@ resource "kubernetes_manifest" "virtualservice" {
     kind       = "VirtualService"
     metadata = {
       name      = "argocd"
-      namespace = var.argocd_namespace
+      namespace = "istio-ingress"
     }
     spec = {
       hosts    = [var.argocd_domain]
@@ -76,7 +64,7 @@ resource "kubernetes_manifest" "virtualservice" {
         }]
         route = [{
           destination = {
-            host = "argocd-server"
+            host = "argocd-server.argocd.svc.cluster.local"
             port = {
               number = 80
             }
@@ -92,17 +80,112 @@ resource "helm_release" "argocd" {
   chart      = "argo-cd"
   repository = "https://argoproj.github.io/argo-helm"
   version    = var.argocd_version
-  namespace  = kubernetes_namespace.argocd.metadata[0].name
-  create_namespace = false
+  namespace  = var.argocd_namespace
+  create_namespace = true
 
   values = [
     yamlencode({
+      crds = {
+        install = true
+      }
+
+      configs = {
+        repositories = {
+          github-app = {
+            type = "git"
+            url  = "https://github.com/Complyt/argocd"
+            appID          = var.github_app_id
+            installationID = var.github_app_installation_id
+            privateKey     = local.github_app_pem
+          }
+        }
+      }
+
+      global = {
+        tolerations = [
+          {
+            key      = "kubernetes.io/arch"
+            operator = "Equal"
+            value    = "arm64"
+            effect   = "NoSchedule"
+          }
+        ]
+      },
+
       server = {
         service = {
-          type = "LoadBalancer"
+          type = "ClusterIP"
         },
-        extraArgs = ["--insecure"]
+        extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
+        affinity = {
+          nodeAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = {
+              nodeSelectorTerms = [
+                {
+                  matchExpressions = [
+                    {
+                      key      = "role"
+                      operator = "In"
+                      values   = ["private"]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+
+      repoServer = {
+        affinity = {
+          nodeAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = {
+              nodeSelectorTerms = [
+                {
+                  matchExpressions = [
+                    {
+                      key      = "role"
+                      operator = "In"
+                      values   = ["private"]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+
+      controller = {
+        affinity = {
+          nodeAffinity = {
+            requiredDuringSchedulingIgnoredDuringExecution = {
+              nodeSelectorTerms = [
+                {
+                  matchExpressions = [
+                    {
+                      key      = "role"
+                      operator = "In"
+                      values   = ["private"]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+
+      redisSecretInit = {
+        podAnnotations = {
+          "sidecar.istio.io/inject" = "false"
+        }
       }
     })
   ]
+}
+
+resource "kubernetes_manifest" "app_of_apps" {
+  manifest = yamldecode(file("${path.module}/app-of-apps.yaml"))
+  depends_on = [helm_release.argocd]
 }

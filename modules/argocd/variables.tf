@@ -4,3 +4,6 @@ variable "argocd_tls_crt" {}
 variable "argocd_tls_key" {}
 variable "tls_secret_name" {}
 variable "argocd_domain" {}
+#variable "github_app_pem" {}
+variable "github_app_id" {}
+variable "github_app_installation_id" {}

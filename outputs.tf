@@ -3,8 +3,12 @@ output "cluster_name" {
   value       = module.gke.cluster_name
 }
 
-output "node_pool_name" {
-  value = module.gke.node_pool_name
+output "public_node_pool_name" {
+  value = module.gke.public_node_pool_name
+}
+
+output "private_node_pool_name" {
+  value = module.gke.private_node_pool_name
 }
 
 output "region" {
