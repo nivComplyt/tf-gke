@@ -59,11 +59,13 @@ resource "helm_release" "istio_ingress" {
             name       = "http"
             port       = 80
             targetPort = 8080
+            protocol    = "TCP"
           },
           {
             name       = "https"
             port       = 443
             targetPort = 8443
+            protocol    = "TCP"
           }
         ]
       }
@@ -80,6 +82,21 @@ resource "helm_release" "istio_ingress" {
           targetPort    = 8443
         }
       ]
+
+      deployment = {
+        containerPorts = [
+          {
+            containerPort = 8080
+            protocol      = "TCP"
+            name          = "http2"
+          },
+          {
+            containerPort = 8443
+            protocol      = "TCP"
+            name          = "https"
+          }
+        ]
+      }
 
       affinity = {
         nodeAffinity = {
@@ -137,8 +154,8 @@ resource "kubernetes_secret" "tls" {
   }
   type = "kubernetes.io/tls"
   data = {
-    "tls.crt" = base64encode(var.argocd_tls_crt)
-    "tls.key" = base64encode(var.argocd_tls_key)
+    "tls.crt" = var.argocd_tls_crt
+    "tls.key" = var.argocd_tls_key
   }
   depends_on = [kubernetes_namespace.istio_ingress]
 }

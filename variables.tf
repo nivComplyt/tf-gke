@@ -42,7 +42,7 @@ variable "private_cidr" {
 variable "cluster_name" {
   description = "The name for the GKE cluster"
   type        = string
-  default     = "demo-cluster"
+  default     = "dev-cluster"
 }
 
 variable "public_pool_name" {
@@ -66,7 +66,7 @@ variable "env_name" {
 variable "machine_type" {
   description = "Type of machine to use for nodes"
   type        = string
-  default     = "t2a-standard-4"
+  default     = "t2a-standard-8"
 }
 
 variable "node_locations" {
@@ -81,12 +81,6 @@ variable "public_node_count" {
   default     = 1
 }
 
-variable "private_node_count" {
-  description = "Initial number of private subnet nodes"
-  type        = number
-  default     = 10
-}
-
 variable "min_public_node_count" {
   description = "Minimum number of public nodes for autoscaling"
   type        = number
@@ -99,16 +93,22 @@ variable "max_public_node_count" {
   default     = 2
 }
 
+variable "private_node_count" {
+  description = "Initial number of private subnet nodes"
+  type        = number
+  default     = 8
+}
+
 variable "min_private_node_count" {
   description = "Minimum number of private nodes for autoscaling"
   type        = number
-  default     = 5
+  default     = 4
 }
 
 variable "max_private_node_count" {
   description = "Maximum number of priavte nodes for autoscaling"
   type        = number
-  default     = 15
+  default     = 12
 }
 
 ############################## Istio ##############################
@@ -163,13 +163,6 @@ variable "argocd_domain" {
   default     = "argocd.complyt.cloud"
 }
 
-# variable "github_app_pem" {
-#   description = "Path for GitHub App private key"
-#   type        = string
-#   sensitive   = true
-#   default     = "./secrets/github-app.pem"
-# }
-
 variable "github_app_id" {
   description = "GitHub App ID"
   type        = string
@@ -178,4 +171,29 @@ variable "github_app_id" {
 variable "github_app_installation_id" {
   description = "GitHub App Installation ID"
   type        = string
+}
+
+############################## LGTM Stack ##############################
+variable "loki_version" {
+  description = "Version for Loki"
+  type        = string
+  default     = "6.20.0"
+}
+
+variable "grafana_version" {
+  description = "Version for Grafana"
+  type        = string
+  default     = "8.13.1"
+}
+
+variable "tempo_version" {
+  description = "Version for Tempo"
+  type        = string
+  default     = "1.21.0"
+}
+
+variable "mimir_version" {
+  description = "Version for Mimir"
+  type        = string
+  default     = "5.7.0"
 }

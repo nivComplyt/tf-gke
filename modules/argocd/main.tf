@@ -1,8 +1,3 @@
-locals {
-  github_app_pem = trimspace(file("${path.root}/secrets/github-app.pem"))
-  #github_app_pem_b64 = base64encode(local.github_app_pem)
-}
-
 resource "kubernetes_secret" "tls" {
   metadata {
     name      = var.tls_secret_name
@@ -23,7 +18,7 @@ resource "kubernetes_manifest" "gateway" {
     kind       = "Gateway"
     metadata = {
       name      = "argocd-gateway"
-      namespace = "istio-ingress"
+      namespace = "argocd"
     }
     spec = {
       selector = {
@@ -51,7 +46,7 @@ resource "kubernetes_manifest" "virtualservice" {
     kind       = "VirtualService"
     metadata = {
       name      = "argocd"
-      namespace = "istio-ingress"
+      namespace = "argocd"
     }
     spec = {
       hosts    = [var.argocd_domain]
@@ -75,6 +70,27 @@ resource "kubernetes_manifest" "virtualservice" {
   }
 }
 
+resource "kubernetes_secret" "argocd_github_app" {
+  metadata {
+    name      = "argocd-repo-github-app"
+    namespace = var.argocd_namespace
+    labels = {
+      "argocd.argoproj.io/secret-type" = "repository"
+    }
+  }
+
+  data = {
+    type            = "git"
+    url             = "https://github.com/Complyt/argocd"
+    project         = "default"
+    githubAppID     = var.github_app_id
+    githubAppInstallationID = var.github_app_installation_id
+    githubAppPrivateKey     = file("${path.root}/secrets/github-app.pem")
+  }
+
+  type = "Opaque"
+}
+
 resource "helm_release" "argocd" {
   name       = "argocd"
   chart      = "argo-cd"
@@ -90,15 +106,7 @@ resource "helm_release" "argocd" {
       }
 
       configs = {
-        repositories = {
-          github-app = {
-            type = "git"
-            url  = "https://github.com/Complyt/argocd"
-            appID          = var.github_app_id
-            installationID = var.github_app_installation_id
-            privateKey     = local.github_app_pem
-          }
-        }
+        repositories = {}
       }
 
       global = {
@@ -183,6 +191,8 @@ resource "helm_release" "argocd" {
       }
     })
   ]
+
+  depends_on = [kubernetes_secret.argocd_github_app]
 }
 
 resource "kubernetes_manifest" "app_of_apps" {

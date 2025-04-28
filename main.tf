@@ -52,7 +52,6 @@ module "argocd" {
   argocd_tls_key             = var.argocd_tls_key
   tls_secret_name            = "argocd-tls"
   argocd_domain              = var.argocd_domain
-  #github_app_pem             = var.github_app_pem
   github_app_id              = var.github_app_id
   github_app_installation_id = var.github_app_installation_id
 
@@ -67,13 +66,14 @@ module "argocd" {
 # module "lgtm_stack" {
 #   source = "./modules/lgtm"
 # 
-#   loki_namespace    = "monitoring"
-#   grafana_namespace = "monitoring"
-#   tempo_namespace   = "monitoring"
-#   mimir_namespace   = "monitoring"
+#   loki_version    = var.loki_version
+#   grafana_version = var.grafana_version
+#   tempo_version   = var.tempo_version
+#   mimir_version   = var.mimir_version
 # 
 #   providers = {
 #     helm       = helm
 #     kubernetes = kubernetes
 #   }
 # }
+# 
