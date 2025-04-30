@@ -65,17 +65,19 @@ module "argocd" {
   depends_on = [module.istio]
 }
 
-# module "lgtm_stack" {
-#   source = "./modules/lgtm"
-# 
-#   loki_version    = var.loki_version
-#   grafana_version = var.grafana_version
-#   tempo_version   = var.tempo_version
-#   mimir_version   = var.mimir_version
-# 
-#   providers = {
-#     helm       = helm
-#     kubernetes = kubernetes
-#   }
-# }
-# 
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  loki_version    = var.loki_version
+  grafana_version = var.grafana_version
+  #tempo_version   = var.tempo_version
+  #mimir_version   = var.mimir_version
+  grafana_admin_password = var.grafana_admin_password
+  wildcard_tls_secret    = var.wildcard_tls_secret
+  vpn_ip_block           = var.vpn_ip_block
+
+  providers = {
+    helm       = helm
+    kubernetes = kubernetes
+  }
+}

@@ -233,3 +233,9 @@ variable "mimir_version" {
   type        = string
   default     = "5.7.0"
 }
+
+variable "grafana_admin_password" {
+  description = "Init password for Grafana UI"
+  type        = string
+  default     = "admin"
+}
