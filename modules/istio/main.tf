@@ -50,48 +50,54 @@ resource "helm_release" "istio_ingress" {
     yamlencode({
       service = {
         type = "LoadBalancer"
+        externalTrafficPolicy = "Local"
         # loadBalancerIP = null   # For VPN
         # annotations = {
         #   "cloud.google.com/load-balancer-type" = "Internal"
         # }
         ports = [
           {
-            name       = "http"
+            name       = "http2"
             port       = 80
-            targetPort = 8080
+            targetPort = 80
             protocol    = "TCP"
           },
           {
             name       = "https"
             port       = 443
-            targetPort = 8443
+            targetPort = 443
             protocol    = "TCP"
           }
         ]
       }
 
-      ingressPorts = [
-        {
-          name          = "http"
-          port          = 8080
-          targetPort    = 8080
-        },
-        {
-          name          = "https"
-          port          = 8443
-          targetPort    = 8443
+      meshConfig = {
+        defaultConfig = {
+          proxyMetadata = {
+            ISTIO_META_DNS_CAPTURE       = "true"
+            ISTIO_META_DNS_AUTO_ALLOCATE = "true"
+          }
         }
-      ]
+      }
+
+      podAnnotations = {
+        "proxy.istio.io/config" = jsonencode({
+          proxyMetadata = {
+            ISTIO_META_DNS_CAPTURE       = "true"
+            ISTIO_META_DNS_AUTO_ALLOCATE = "true"
+          }
+        })
+      }
 
       deployment = {
         containerPorts = [
           {
-            containerPort = 8080
+            containerPort = 80
             protocol      = "TCP"
             name          = "http2"
           },
           {
-            containerPort = 8443
+            containerPort = 443
             protocol      = "TCP"
             name          = "https"
           }
@@ -132,6 +138,56 @@ resource "helm_release" "istio_ingress" {
   ]
 }
 
+resource "kubernetes_manifest" "global_gateway" {
+  manifest = {
+    apiVersion = "networking.istio.io/v1beta1"
+    kind       = "Gateway"
+    metadata = {
+      name      = "complyt-cloud-gateway"
+      namespace = "istio-ingress"
+    }
+    spec = {
+      selector = {
+        istio = "ingressgateway"
+      }
+      servers = [
+        {
+          port = {
+            number   = 443
+            name     = "https"
+            protocol = "HTTPS"
+          }
+          tls = {
+            mode           = "SIMPLE"
+            credentialName = var.wildcard_tls_secret
+          }
+          hosts = [
+            "*.complyt.cloud"
+          ]
+        }
+      ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "sidecar_egress_all" {
+  manifest = {
+    apiVersion = "networking.istio.io/v1beta1"
+    kind       = "Sidecar"
+    metadata = {
+      name      = "egress-all"
+      namespace = "istio-ingress"
+    }
+    spec = {
+      egress = [
+        {
+          hosts = ["*/*"]
+        }
+      ]
+    }
+  }
+}
+
 resource "kubernetes_manifest" "inject_labels" {
   for_each = toset(var.inject_namespaces)
 
@@ -147,15 +203,84 @@ resource "kubernetes_manifest" "inject_labels" {
   }
 }
 
-resource "kubernetes_secret" "tls" {
+resource "kubernetes_secret" "wildcard_tls" {
   metadata {
-    name      = var.tls_secret_name
+    name      = var.wildcard_tls_secret
     namespace = "istio-ingress"
   }
   type = "kubernetes.io/tls"
   data = {
-    "tls.crt" = var.argocd_tls_crt
-    "tls.key" = var.argocd_tls_key
+    "tls.crt" = var.wildcard_tls_crt
+    "tls.key" = var.wildcard_tls_key
   }
   depends_on = [kubernetes_namespace.istio_ingress]
+}
+
+resource "kubernetes_manifest" "virtualservice_app" {
+  for_each = var.apps
+
+  manifest = {
+    apiVersion = "networking.istio.io/v1beta1"
+    kind       = "VirtualService"
+    metadata = {
+      name      = each.key
+      namespace = each.value.namespace
+    }
+    spec = {
+      hosts    = ["${each.key}.complyt.cloud"]
+      gateways = ["istio-ingress/complyt-cloud-gateway"]
+      http = [
+        {
+          match = [
+            {
+              uri = {
+                prefix = "/"
+              }
+            }
+          ]
+          route = [
+            {
+              destination = {
+                host = "${each.value.service_name}.${each.value.namespace}.svc.cluster.local"
+                port = {
+                  number = each.value.service_port
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+
+resource "kubernetes_manifest" "authorization_policy_nordlayer" {
+  manifest = {
+    apiVersion = "security.istio.io/v1beta1"
+    kind       = "AuthorizationPolicy"
+    metadata = {
+      name      = "allow-only-nordlayer"
+      namespace = "istio-ingress"
+    }
+    spec = {
+      selector = {
+        matchLabels = {
+          istio = "ingressgateway"
+          app = "istio-ingressgateway"
+        }
+      }
+      action = "ALLOW"
+      rules = [
+        {
+          from = [
+            {
+              source = {
+                ipBlocks = var.vpn_ip_block
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
 }

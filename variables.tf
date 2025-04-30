@@ -124,6 +124,62 @@ variable "inject_namespaces" {
   default     = ["argocd"]
 }
 
+variable "wildcard_tls_secret" {
+  description = "Name of TLS secret to create and reference in Gateway"
+  type        = string
+  default     = "wildcard-tls"
+}
+
+variable "wildcard_tls_crt" {
+  description = "Path to Base64-encoded TLS certificate"
+  type        = string
+  sensitive   = true
+  default     = "./secrets/wildcard.crt"
+}
+
+variable "wildcard_tls_key" {
+  description = "Path to Base64-encoded TLS private key"
+  type        = string
+  sensitive   = true
+  default     = "./secrets/wildcard.key"
+}
+
+variable "apps" {
+  type = map(object({
+    namespace    = string
+    service_port = number
+    service_name = string
+  }))
+  default = {
+    analytics = {
+      namespace    = "analytics"
+      service_port = 80
+      service_name = "analytics-service"
+    }
+    internal = {
+      namespace    = "internal"
+      service_port = 3000
+      service_name = "internal-internal"
+    }
+    assessment = {
+      namespace    = "assessment"
+      service_port = 80
+      service_name = "analytics-assessment-service"
+    }
+    autofiling = {
+      namespace    = "autofiling"
+      service_port = 80
+      service_name = "frontend"
+    }
+  }
+}
+
+variable "vpn_ip_block" {
+  description = "List of Allowed VPN static IP address for Istio Ingress Gateway access"
+  type        = list(string)
+  default     = ["205.234.190.10/32"]
+}
+
 ############################## ArgoCD ##############################
 variable "argocd_namespace" {
   description = "Namespace to install Argo CD in"
@@ -135,26 +191,6 @@ variable "argocd_version" {
   description = "Helm chart version for Argo CD"
   type        = string
   default     = "7.8.27" # This maps to Argo CD v2.14.x
-}
-
-variable "argocd_tls_crt" {
-  description = "Base64-encoded TLS certificate"
-  type        = string
-  sensitive   = true
-  default     = "./secrets/argocd.crt"
-}
-
-variable "argocd_tls_key" {
-  description = "Base64-encoded TLS private key"
-  type        = string
-  sensitive   = true
-  default     = "./secrets/argocd.key"
-}
-
-variable "tls_secret_name" {
-  description = "Name of TLS secret to create and reference in Gateway"
-  type        = string
-  default     = "argocd-tls"
 }
 
 variable "argocd_domain" {

@@ -1,14 +1,20 @@
-resource "kubernetes_secret" "tls" {
-  metadata {
-    name      = var.tls_secret_name
-    namespace = var.argocd_namespace
-  }
-
-  type = "kubernetes.io/tls"
-
-  data = {
-    "tls.crt" = var.argocd_tls_crt
-    "tls.key" = var.argocd_tls_key
+locals {
+  private_node_affinity = {
+    nodeAffinity = {
+      requiredDuringSchedulingIgnoredDuringExecution = {
+        nodeSelectorTerms = [
+          {
+            matchExpressions = [
+              {
+                key      = "role"
+                operator = "In"
+                values   = ["private"]
+              }
+            ]
+          }
+        ]
+      }
+    }
   }
 }
 
@@ -32,7 +38,7 @@ resource "kubernetes_manifest" "gateway" {
         }
         tls = {
           mode           = "SIMPLE"
-          credentialName = var.tls_secret_name
+          credentialName = var.wildcard_tls_secret
         }
         hosts = [var.argocd_domain]
       }]
@@ -125,63 +131,15 @@ resource "helm_release" "argocd" {
           type = "ClusterIP"
         },
         extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
-        affinity = {
-          nodeAffinity = {
-            requiredDuringSchedulingIgnoredDuringExecution = {
-              nodeSelectorTerms = [
-                {
-                  matchExpressions = [
-                    {
-                      key      = "role"
-                      operator = "In"
-                      values   = ["private"]
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        }
+        affinity = local.private_node_affinity
       },
 
       repoServer = {
-        affinity = {
-          nodeAffinity = {
-            requiredDuringSchedulingIgnoredDuringExecution = {
-              nodeSelectorTerms = [
-                {
-                  matchExpressions = [
-                    {
-                      key      = "role"
-                      operator = "In"
-                      values   = ["private"]
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        }
+        affinity = local.private_node_affinity
       },
 
       controller = {
-        affinity = {
-          nodeAffinity = {
-            requiredDuringSchedulingIgnoredDuringExecution = {
-              nodeSelectorTerms = [
-                {
-                  matchExpressions = [
-                    {
-                      key      = "role"
-                      operator = "In"
-                      values   = ["private"]
-                    }
-                  ]
-                }
-              ]
-            }
-          }
-        }
+        affinity = local.private_node_affinity
       },
 
       redisSecretInit = {

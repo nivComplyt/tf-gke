@@ -29,12 +29,14 @@ module "gke" {
 }
 
 module "istio" {
-  source            = "./modules/istio"
-  istio_version     = var.istio_version
-  inject_namespaces = var.inject_namespaces
-  argocd_tls_crt    = var.argocd_tls_crt
-  argocd_tls_key    = var.argocd_tls_key
-  tls_secret_name   = "argocd-tls"
+  source              = "./modules/istio"
+  istio_version       = var.istio_version
+  inject_namespaces   = var.inject_namespaces
+  wildcard_tls_secret = var.wildcard_tls_secret
+  wildcard_tls_crt    = var.wildcard_tls_crt
+  wildcard_tls_key    = var.wildcard_tls_key
+  apps                = var.apps
+  vpn_ip_block        = var.vpn_ip_block
 
   providers = {
     helm       = helm
@@ -48,10 +50,10 @@ module "argocd" {
   source                     = "./modules/argocd"
   argocd_namespace           = var.argocd_namespace
   argocd_version             = var.argocd_version
-  argocd_tls_crt             = var.argocd_tls_crt
-  argocd_tls_key             = var.argocd_tls_key
-  tls_secret_name            = "argocd-tls"
   argocd_domain              = var.argocd_domain
+  wildcard_tls_secret        = var.wildcard_tls_secret
+  wildcard_tls_crt           = var.wildcard_tls_crt
+  wildcard_tls_key           = var.wildcard_tls_key
   github_app_id              = var.github_app_id
   github_app_installation_id = var.github_app_installation_id
 

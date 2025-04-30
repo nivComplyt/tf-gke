@@ -1,9 +1,8 @@
 variable "argocd_namespace" {}
 variable "argocd_version" {}
-variable "argocd_tls_crt" {}
-variable "argocd_tls_key" {}
-variable "tls_secret_name" {}
 variable "argocd_domain" {}
-#variable "github_app_pem" {}
+variable "wildcard_tls_secret" {}
+variable "wildcard_tls_crt" {}
+variable "wildcard_tls_key" {}
 variable "github_app_id" {}
 variable "github_app_installation_id" {}
