@@ -9,6 +9,21 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "~> 2.36"
     }
+
+    # helm = {
+    #   source = "hashicorp/helm"
+    #   version = "2.17.0"
+    # }
+
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 3.22"
+    }
+
+    vault = {
+      source  = "hashicorp/vault"
+      version = "4.8.0"
+    }
   }
 }
 
@@ -31,4 +46,17 @@ provider "helm" {
     cluster_ca_certificate = base64decode(module.gke.cluster_ca_certificate)
     token                  = data.google_client_config.default.access_token
   }
+}
+
+provider "grafana" {
+  alias                = "monitoring"
+  url                  = "https://grafana.complyt.cloud"
+  auth                 = var.grafana_sa_token
+  insecure_skip_verify = true # Remove once TLS cert is issued 
+}
+
+provider "vault" {
+  address   = var.vault_address
+  token     = var.vault_token
+  namespace = "admin"
 }

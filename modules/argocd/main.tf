@@ -113,6 +113,15 @@ resource "helm_release" "argocd" {
 
       configs = {
         repositories = {}
+        cm = {
+          configManagementPlugins = <<-EOT
+            - name: avp
+              init:
+                command: ["sh", "-c", "argocd-vault-plugin generate ./"]
+              generate:
+                command: ["sh", "-c", "argocd-vault-plugin generate ./"]
+          EOT
+        }
       }
 
       global = {
@@ -130,12 +139,67 @@ resource "helm_release" "argocd" {
         service = {
           type = "ClusterIP"
         },
-        extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
+        #extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
         affinity = local.private_node_affinity
       },
 
       repoServer = {
         affinity = local.private_node_affinity
+        volumes = [
+          {
+            name = "custom-tools"
+            emptyDir = {}
+          }
+        ]
+        volumeMounts = [
+          {
+            mountPath = "/usr/local/bin/argocd-vault-plugin"
+            name      = "custom-tools"
+            subPath   = "argocd-vault-plugin"
+          }
+        ]
+        initContainers = [
+          {
+            name  = "install-argocd-vault-plugin"
+            image = "alpine:latest"
+            command = [ "sh", "-c" ]
+            args = [
+              <<-EOT
+                apk add --no-cache curl && \
+                curl -L -o /custom-tools/argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${var.avp_version}/argocd-vault-plugin_${var.avp_version}_linux_amd64 && \
+                chmod +x /custom-tools/argocd-vault-plugin
+              EOT
+            ]
+            volumeMounts = [
+              {
+                mountPath = "/custom-tools"
+                name      = "custom-tools"
+              }
+            ]
+          }
+        ]
+        env = [
+          {
+            name  = "AVP_TYPE"
+            value = "vault"
+          },
+          {
+            name  = "AVP_AUTH_TYPE"
+            value = "kubernetes"
+          },
+          {
+            name  = "AVP_VAULT_ADDR"
+            value = var.vault_address
+          },
+          {
+            name  = "AVP_K8S_ROLE"
+            value = "argocd"
+          },
+          {
+            name  = "AVP_K8S_TOKEN_PATH"
+            value = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+          }
+        ]
       },
 
       controller = {

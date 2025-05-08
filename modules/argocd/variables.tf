@@ -6,3 +6,9 @@ variable "wildcard_tls_crt" {}
 variable "wildcard_tls_key" {}
 variable "github_app_id" {}
 variable "github_app_installation_id" {}
+variable "vpn_ip_block" {}
+variable "vault_address" {}
+variable "avp_version" {}
+variable "github_username" {}
+variable "github_pat" {}
+variable "github_email" {}

@@ -111,39 +111,20 @@ variable "max_private_node_count" {
   default     = 12
 }
 
-############################## Istio ##############################
-variable "istio_version" {
-  description = "Istio chart version to install"
-  type        = string
-  default     = "1.25.2"
+variable "arm64_tolerations" {
+  description = "Toleration for ARM64 nodes"
+  type        = any
+  default = [
+    {
+      key      = "kubernetes.io/arch"
+      operator = "Equal"
+      value    = "arm64"
+      effect   = "NoSchedule"
+    }
+  ]
 }
 
-variable "inject_namespaces" {
-  description = "List of namespaces to label for automatic Istio sidecar injection"
-  type        = list(string)
-  default     = ["argocd"]
-}
-
-variable "wildcard_tls_secret" {
-  description = "Name of TLS secret to create and reference in Gateway"
-  type        = string
-  default     = "wildcard-tls"
-}
-
-variable "wildcard_tls_crt" {
-  description = "Path to Base64-encoded TLS certificate"
-  type        = string
-  sensitive   = true
-  default     = "./secrets/wildcard.crt"
-}
-
-variable "wildcard_tls_key" {
-  description = "Path to Base64-encoded TLS private key"
-  type        = string
-  sensitive   = true
-  default     = "./secrets/wildcard.key"
-}
-
+############################## Applications ##############################
 variable "apps" {
   type = map(object({
     namespace    = string
@@ -172,6 +153,39 @@ variable "apps" {
       service_name = "frontend"
     }
   }
+}
+
+############################## Istio ##############################
+variable "istio_version" {
+  description = "Istio chart version to install"
+  type        = string
+  default     = "1.25.2"
+}
+
+variable "inject_namespaces" {
+  description = "List of namespaces to label for automatic Istio sidecar injection"
+  type        = list(string)
+  default     = ["argocd"]
+}
+
+variable "wildcard_tls_secret" {
+  description = "Name of TLS secret to create and reference in Gateway"
+  type        = string
+  default     = "wildcard-tls"
+}
+
+variable "wildcard_tls_crt" {
+  description = "Path to Base64-encoded TLS certificate"
+  type        = string
+  sensitive   = true
+  default     = "./secrets/wildcard-tls.crt"
+}
+
+variable "wildcard_tls_key" {
+  description = "Path to Base64-encoded TLS private key"
+  type        = string
+  sensitive   = true
+  default     = "./secrets/wildcard-tls.key"
 }
 
 variable "vpn_ip_block" {
@@ -209,7 +223,13 @@ variable "github_app_installation_id" {
   type        = string
 }
 
-############################## LGTM Stack ##############################
+variable "avp_version" {
+  description = "Version of argocd-vault-plugin to install"
+  type        = string
+  default     = "1.18.1"
+}
+
+############################## Monitoring - LGTM Stack ##############################
 variable "loki_version" {
   description = "Version for Loki"
   type        = string
@@ -238,4 +258,50 @@ variable "grafana_admin_password" {
   description = "Init password for Grafana UI"
   type        = string
   default     = "admin"
+}
+
+variable "grafana_sa_token" {
+  description = "Grafana service account token for provider authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "otel_version" {
+  description = "Version ofOpenTelemntry"
+  type        = string
+  default     = "0.122.5"
+}
+
+variable "bucket_name" {
+  description = "Name of GCS bucket for Loki data"
+  type        = string
+  default     = "loki-data-complyt-dev"
+}
+
+############################## Hashicorp Vault ##############################
+variable "vault_address" {
+  description = "Vault external address"
+  type        = string
+}
+
+variable "vault_token" {
+  description = "Vault Token"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_username" {
+  description = "GitHub username for ghcr.io image pulls"
+  type        = string
+}
+
+variable "github_pat" {
+  description = "GitHub Personal Access Token for ghcr.io"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_email" {
+  description = "GitHub email for ghcr.io image pulls"
+  type        = string
 }

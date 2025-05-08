@@ -11,6 +11,17 @@ resource "helm_release" "istio_base" {
   version    = var.istio_version
   namespace  = "istio-system"
   create_namespace = true
+
+  values = [
+    yamlencode({
+      global = {
+        proxy = {
+          accessLogEncoding = "JSON"
+          accessLogFormat   = "{\"start_time\":\"%START_TIME%\",\"method\":\"%REQ(:METHOD)%\",\"path\":\"%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%\",\"protocol\":\"%PROTOCOL%\",\"response_code\":\"%RESPONSE_CODE%\",\"response_flags\":\"%RESPONSE_FLAGS%\",\"bytes_received\":\"%BYTES_RECEIVED%\",\"bytes_sent\":\"%BYTES_SENT%\",\"duration\":\"%DURATION%\",\"user_agent\":\"%REQ(USER-AGENT)%\",\"upstream_host\":\"%UPSTREAM_HOST%\"}"
+        }
+      }
+    })
+  ]
 }
 
 resource "helm_release" "istiod" {
@@ -51,10 +62,6 @@ resource "helm_release" "istio_ingress" {
       service = {
         type = "LoadBalancer"
         externalTrafficPolicy = "Local"
-        # loadBalancerIP = null   # For VPN
-        # annotations = {
-        #   "cloud.google.com/load-balancer-type" = "Internal"
-        # }
         ports = [
           {
             name       = "http2"
