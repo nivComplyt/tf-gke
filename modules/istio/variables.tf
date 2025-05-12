@@ -5,3 +5,4 @@ variable "wildcard_tls_crt" {}
 variable "wildcard_tls_key" {}
 variable "apps" {}
 variable "vpn_ip_block" {}
+variable "arm64_tolerations" {}

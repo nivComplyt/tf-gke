@@ -9,5 +9,4 @@ variable wildcard_tls_secret {}
 variable "vpn_ip_block" {}
 variable "otel_version" {}
 variable "region" {}
-variable "bucket_name" {}
 variable "apps" {}

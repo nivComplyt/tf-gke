@@ -125,22 +125,23 @@ resource "helm_release" "argocd" {
       }
 
       global = {
-        tolerations = [
-          {
-            key      = "kubernetes.io/arch"
-            operator = "Equal"
-            value    = "arm64"
-            effect   = "NoSchedule"
-          }
-        ]
+        tolerations = var.arm64_tolerations
       },
 
       server = {
         service = {
           type = "ClusterIP"
-        },
-        #extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
-        affinity = local.private_node_affinity
+        }
+        extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
+        #affinity = local.private_node_affinity
+
+        ingress = {
+          enabled = false
+        }
+
+        config = {
+          url = "https://${var.argocd_domain}"
+        }
       },
 
       repoServer = {

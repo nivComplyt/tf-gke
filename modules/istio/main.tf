@@ -34,14 +34,7 @@ resource "helm_release" "istiod" {
 
   values = [
     yamlencode({
-      tolerations = [
-        {
-          key      = "kubernetes.io/arch"
-          operator = "Equal"
-          value    = "arm64"
-          effect   = "NoSchedule"
-        }
-      ]
+      tolerations = var.arm64_tolerations
     })
   ]
 
@@ -80,9 +73,13 @@ resource "helm_release" "istio_ingress" {
 
       meshConfig = {
         defaultConfig = {
+          gatewayTopology = {
+            numTrustedProxies = 1
+          }
           proxyMetadata = {
             ISTIO_META_DNS_CAPTURE       = "true"
             ISTIO_META_DNS_AUTO_ALLOCATE = "true"
+            ISTIO_META_REMOTE_ADDRESS    = "X-Forwarded-For"
           }
         }
       }
@@ -92,6 +89,7 @@ resource "helm_release" "istio_ingress" {
           proxyMetadata = {
             ISTIO_META_DNS_CAPTURE       = "true"
             ISTIO_META_DNS_AUTO_ALLOCATE = "true"
+            ISTIO_META_REMOTE_ADDRESS    = "X-Forwarded-For"
           }
         })
       }
@@ -129,14 +127,7 @@ resource "helm_release" "istio_ingress" {
         }
       }
 
-      tolerations = [
-        {
-          key      = "kubernetes.io/arch"
-          operator = "Equal"
-          value    = "arm64"
-          effect   = "NoSchedule"
-        }
-      ]
+      tolerations = var.arm64_tolerations
 
       labels = {
         istio = "ingressgateway"

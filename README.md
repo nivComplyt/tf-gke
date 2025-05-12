@@ -2,7 +2,7 @@
 
 This document lists all available configuration variables for setting up the infrastructure modules.
 
-## Project Module
+## Project
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -11,7 +11,7 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## Network Module
+## Network
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -23,19 +23,19 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## GKE Module
+## GKE
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
 | cluster_name | The name for the GKE cluster | "dev-cluster" |
-| public_pool_name | The name for the GKE public nodes pool | "public-pool" |
-| private_pool_name | The name for the GKE private nodes pool | "private-pool" |
 | env_name | The environment for the GKE cluster | "prod" |
 | machine_type | Type of machine to use for nodes | "t2a-standard-8" |
 | node_locations | Location of machines to use for nodes | ["us-central1-a", "us-central1-b", "us-central1-f"] |
+| public_pool_name | The name for the GKE public nodes pool | "public-pool" |
 | public_node_count | Initial number of public subnet nodes | 1 |
 | min_public_node_count | Minimum number of public nodes for autoscaling | 1 |
 | max_public_node_count | Maximum number of public nodes for autoscaling | 2 |
+| private_pool_name | The name for the GKE private nodes pool | "private-pool" |
 | private_node_count | Initial number of private subnet nodes | 8 |
 | min_private_node_count | Minimum number of private nodes for autoscaling | 4 |
 | max_private_node_count | Maximum number of priavte nodes for autoscaling | 12 |
@@ -43,7 +43,7 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## Applications Module
+## Applications
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -51,7 +51,7 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## Istio Module
+## Istio
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -64,7 +64,7 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## ArgoCD Module
+## ArgoCD
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -77,7 +77,7 @@ This document lists all available configuration variables for setting up the inf
 
 ---
 
-## Monitoring - LGTM Stack Module
+## Monitoring - LGTM Stack
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
@@ -85,22 +85,19 @@ This document lists all available configuration variables for setting up the inf
 | grafana_version | Version for Grafana | "8.13.1" |
 | tempo_version | Version for Tempo | "1.21.0" |
 | mimir_version | Version for Mimir | "5.7.0" |
+| otel_version | Version ofOpenTelemntry | "0.122.5" |
 | grafana_admin_password | Init password for Grafana UI | "admin" |
 | grafana_sa_token | Grafana service account token for provider authentication | (No default) |
-| otel_version | Version ofOpenTelemntry | "0.122.5" |
-| bucket_name | Name of GCS bucket for Loki data | "loki-data-complyt-dev" |
 
 ---
 
-## Hashicorp Vault Module
+## Hashicorp Vault
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
 | vault_address | Vault external address | (No default) |
 | vault_token | Vault Token | (No default) |
-| github_username | GitHub username for ghcr.io image pulls | (No default) |
-| github_pat | GitHub Personal Access Token for ghcr.io | (No default) |
-| github_email | GitHub email for ghcr.io image pulls | (No default) |
+| apps_secrets | Secrets to load into applications with argocd-vault-plugin | (No default) |
 
 ---
 

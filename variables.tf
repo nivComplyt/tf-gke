@@ -45,18 +45,6 @@ variable "cluster_name" {
   default     = "dev-cluster"
 }
 
-variable "public_pool_name" {
-  description = "The name for the GKE public nodes pool"
-  type        = string
-  default     = "public-pool"
-}
-
-variable "private_pool_name" {
-  description = "The name for the GKE private nodes pool"
-  type        = string
-  default     = "private-pool"
-}
-
 variable "env_name" {
   description = "The environment for the GKE cluster"
   type        = string
@@ -75,6 +63,12 @@ variable "node_locations" {
   default     = ["us-central1-a", "us-central1-b", "us-central1-f"]
 }
 
+variable "public_pool_name" {
+  description = "The name for the GKE public nodes pool"
+  type        = string
+  default     = "public-pool"
+}
+
 variable "public_node_count" {
   description = "Initial number of public subnet nodes"
   type        = number
@@ -91,6 +85,12 @@ variable "max_public_node_count" {
   description = "Maximum number of public nodes for autoscaling"
   type        = number
   default     = 2
+}
+
+variable "private_pool_name" {
+  description = "The name for the GKE private nodes pool"
+  type        = string
+  default     = "private-pool"
 }
 
 variable "private_node_count" {
@@ -254,6 +254,12 @@ variable "mimir_version" {
   default     = "5.7.0"
 }
 
+variable "otel_version" {
+  description = "Version ofOpenTelemntry"
+  type        = string
+  default     = "0.122.5"
+}
+
 variable "grafana_admin_password" {
   description = "Init password for Grafana UI"
   type        = string
@@ -264,18 +270,6 @@ variable "grafana_sa_token" {
   description = "Grafana service account token for provider authentication"
   type        = string
   sensitive   = true
-}
-
-variable "otel_version" {
-  description = "Version ofOpenTelemntry"
-  type        = string
-  default     = "0.122.5"
-}
-
-variable "bucket_name" {
-  description = "Name of GCS bucket for Loki data"
-  type        = string
-  default     = "loki-data-complyt-dev"
 }
 
 ############################## Hashicorp Vault ##############################
@@ -290,18 +284,8 @@ variable "vault_token" {
   sensitive   = true
 }
 
-variable "github_username" {
-  description = "GitHub username for ghcr.io image pulls"
-  type        = string
-}
-
-variable "github_pat" {
-  description = "GitHub Personal Access Token for ghcr.io"
-  type        = string
+variable "apps_secrets" {
+  description = "Secrets to load into applications with argocd-vault-plugin"
+  type        = map(string)
   sensitive   = true
-}
-
-variable "github_email" {
-  description = "GitHub email for ghcr.io image pulls"
-  type        = string
 }

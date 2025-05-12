@@ -66,3 +66,8 @@ resource "vault_kubernetes_auth_backend_role" "app_roles" {
   token_policies = [vault_policy.app_policies[each.key].name]
   token_ttl      = 3600
 }
+
+resource "vault_generic_secret" "analytics_secrets" {
+  path      = "secret/gke-internal/analytics"
+  data_json = jsonencode(var.apps_secrets)
+}

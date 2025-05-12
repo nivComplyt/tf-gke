@@ -9,6 +9,4 @@ variable "github_app_installation_id" {}
 variable "vpn_ip_block" {}
 variable "vault_address" {}
 variable "avp_version" {}
-variable "github_username" {}
-variable "github_pat" {}
-variable "github_email" {}
+variable "arm64_tolerations" {}

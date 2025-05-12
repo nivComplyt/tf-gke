@@ -47,6 +47,7 @@ module "istio" {
   wildcard_tls_key    = var.wildcard_tls_key
   apps                = var.apps
   vpn_ip_block        = var.vpn_ip_block
+  arm64_tolerations   = var.arm64_tolerations
 
   providers = {
     helm       = helm
@@ -66,12 +67,10 @@ module "argocd" {
   wildcard_tls_key           = var.wildcard_tls_key
   github_app_id              = var.github_app_id
   github_app_installation_id = var.github_app_installation_id
-  github_username            = var.github_username
-  github_pat                 = var.github_pat
-  github_email               = var.github_email
   vpn_ip_block               = var.vpn_ip_block
   vault_address              = var.vault_address
   avp_version                = var.avp_version
+  arm64_tolerations          = var.arm64_tolerations
 
   providers = {
     helm       = helm
@@ -95,7 +94,6 @@ module "monitoring" {
   vpn_ip_block           = var.vpn_ip_block
   otel_version           = var.otel_version
   region                 = var.region
-  bucket_name            = var.bucket_name
   apps                   = var.apps
 
   providers = {
@@ -111,6 +109,7 @@ module "vault" {
   kubernetes_host    = "https://${module.gke.cluster_endpoint}"
   kubernetes_ca_cert = base64decode(module.gke.cluster_ca_certificate)
   apps               = var.apps
+  apps_secrets       = var.apps_secrets
 
   providers = {
     helm       = helm
