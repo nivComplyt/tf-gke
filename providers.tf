@@ -49,10 +49,10 @@ provider "helm" {
 }
 
 provider "grafana" {
-  alias                = "monitoring"
-  url                  = "https://grafana.complyt.cloud"
-  auth                 = var.grafana_sa_token
-  insecure_skip_verify = true # Remove once TLS cert is issued 
+  alias = "monitoring"
+  url   = "https://grafana-internal.complyt.io"
+  auth  = var.grafana_sa_token
+  #insecure_skip_verify = true # Remove once TLS cert is issued 
 }
 
 provider "vault" {

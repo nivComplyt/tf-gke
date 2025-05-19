@@ -97,115 +97,132 @@ resource "kubernetes_secret" "argocd_github_app" {
   type = "Opaque"
 }
 
+resource "kubernetes_config_map" "argocd_cmp_avp" {
+  metadata {
+    name      = "argocd-cmp-avp"
+    namespace = "argocd"
+    labels = {
+      "argocd.argoproj.io/compare-options"          = "IgnoreExtraneous"
+      "argocd.argoproj.io/config-management-plugin" = "avp"
+    }
+  }
+  data = {
+    "plugin.yaml" = <<-YAML
+      apiVersion: argoproj.io/v1alpha1
+      kind: ConfigManagementPlugin
+      metadata:
+        name: avp
+      spec:
+        init:
+          command: [/home/argocd/cmp-server/plugins/avp/argocd-vault-plugin]
+          args: ["generate", "."]
+        generate:
+          command: [/home/argocd/cmp-server/plugins/avp/argocd-vault-plugin]
+          args: ["generate", "."]
+        discover:
+          fileName: Chart.yaml
+    YAML
+  }
+}
+
 resource "helm_release" "argocd" {
-  name       = "argocd"
-  chart      = "argo-cd"
-  repository = "https://argoproj.github.io/argo-helm"
-  version    = var.argocd_version
-  namespace  = var.argocd_namespace
+  name             = "argocd"
+  chart            = "argo-cd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  version          = var.argocd_version
+  namespace        = var.argocd_namespace
   create_namespace = true
 
   values = [
     yamlencode({
-      crds = {
-        install = true
-      }
-
-      configs = {
-        repositories = {}
-        cm = {
-          configManagementPlugins = <<-EOT
-            - name: avp
-              init:
-                command: ["sh", "-c", "argocd-vault-plugin generate ./"]
-              generate:
-                command: ["sh", "-c", "argocd-vault-plugin generate ./"]
-          EOT
-        }
-      }
+      crds = { install = true }
 
       global = {
         tolerations = var.arm64_tolerations
-      },
+      }
 
       server = {
-        service = {
-          type = "ClusterIP"
-        }
-        extraArgs = ["--insecure"],   # TODO: Remove once we have a real cert
-        #affinity = local.private_node_affinity
-
-        ingress = {
-          enabled = false
-        }
-
-        config = {
-          url = "https://${var.argocd_domain}"
-        }
-      },
+        service = { type = "ClusterIP" }
+        extraArgs = ["--insecure"]
+        ingress = { enabled = false }
+        config = { url = "https://${var.argocd_domain}" }
+      }
 
       repoServer = {
         affinity = local.private_node_affinity
+
         volumes = [
           {
             name = "custom-tools"
             emptyDir = {}
-          }
-        ]
-        volumeMounts = [
+          },
           {
-            mountPath = "/usr/local/bin/argocd-vault-plugin"
-            name      = "custom-tools"
-            subPath   = "argocd-vault-plugin"
+            name = "cmp-plugin-config"
+            configMap = {
+              name = "argocd-cmp-avp"
+            }
+          },
+          {
+            name = "cmp-config-dir"
+            emptyDir = {}
           }
         ]
+
         initContainers = [
           {
-            name  = "install-argocd-vault-plugin"
-            image = "alpine:latest"
-            command = [ "sh", "-c" ]
-            args = [
+            name    = "download-avp"
+            image   = "alpine:3.12"
+            command = ["/bin/sh", "-c"]
+            args    = [
               <<-EOT
                 apk add --no-cache curl && \
-                curl -L -o /custom-tools/argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${var.avp_version}/argocd-vault-plugin_${var.avp_version}_linux_amd64 && \
-                chmod +x /custom-tools/argocd-vault-plugin
+                mkdir -p /custom-tools/avp && \
+                curl -L -o /custom-tools/avp/argocd-vault-plugin https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${var.avp_version}/argocd-vault-plugin_${var.avp_version}_linux_arm64 && \
+                chmod +x /custom-tools/avp/argocd-vault-plugin && \
+                mkdir -p /home/argocd/cmp-server/config
               EOT
             ]
             volumeMounts = [
               {
-                mountPath = "/custom-tools"
                 name      = "custom-tools"
+                mountPath = "/custom-tools"
+              },
+              {
+                name      = "cmp-config-dir"
+                mountPath = "/home/argocd/cmp-server/config"
               }
             ]
           }
         ]
-        env = [
+
+        extraVolumeMounts = [
           {
-            name  = "AVP_TYPE"
-            value = "vault"
+            name      = "custom-tools"
+            mountPath = "/home/argocd/cmp-server/plugins/avp"
+            subPath   = "avp"
           },
           {
-            name  = "AVP_AUTH_TYPE"
-            value = "kubernetes"
+            name      = "cmp-config-dir"
+            mountPath = "/home/argocd/cmp-server/config"
           },
           {
-            name  = "AVP_VAULT_ADDR"
-            value = var.vault_address
-          },
-          {
-            name  = "AVP_K8S_ROLE"
-            value = "argocd"
-          },
-          {
-            name  = "AVP_K8S_TOKEN_PATH"
-            value = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            name      = "cmp-plugin-config"
+            mountPath = "/home/argocd/cmp-server/config"
           }
         ]
-      },
+
+        env = [
+          { name = "AVP_TYPE", value = "vault" },
+          { name = "AVP_AUTH_TYPE", value = "kubernetes" },
+          { name = "AVP_VAULT_ADDR", value = var.vault_address },
+          { name = "AVP_K8S_ROLE", value = "argocd" },
+          { name = "AVP_K8S_TOKEN_PATH", value = "/var/run/secrets/kubernetes.io/serviceaccount/token" }
+        ]
+      }
 
       controller = {
         affinity = local.private_node_affinity
-      },
+      }
 
       redisSecretInit = {
         podAnnotations = {
@@ -216,9 +233,4 @@ resource "helm_release" "argocd" {
   ]
 
   depends_on = [kubernetes_secret.argocd_github_app]
-}
-
-resource "kubernetes_manifest" "app_of_apps" {
-  manifest = yamldecode(file("${path.module}/app-of-apps.yaml"))
-  depends_on = [helm_release.argocd]
 }

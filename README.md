@@ -6,7 +6,7 @@ This document lists all available configuration variables for setting up the inf
 
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
-| project_id | The project ID to host the cluster in | "complyt-dev" |
+| project_id | The project ID to host the cluster in | (No default) |
 | region | The region to host the cluster in | "us-central1" |
 
 ---
@@ -56,10 +56,10 @@ This document lists all available configuration variables for setting up the inf
 | Variable Name | Description | Example Value |
 | :------------ | :----------- | :------------ |
 | istio_version | Istio chart version to install | "1.25.2" |
-| inject_namespaces | List of namespaces to label for automatic Istio sidecar injection | ["argocd"] |
+| inject_namespaces | List of namespaces to label for automatic Istio sidecar injection | ["argocd", "analytics", "assessment", "internal", "autofiling", "grafana"] |
 | wildcard_tls_secret | Name of TLS secret to create and reference in Gateway | "wildcard-tls" |
-| wildcard_tls_crt | Path to Base64-encoded TLS certificate | "./secrets/wildcard-tls.crt" |
-| wildcard_tls_key | Path to Base64-encoded TLS private key | "./secrets/wildcard-tls.key" |
+| wildcard_tls_crt | Path to Base64-encoded TLS certificate | "./secrets/complyt.io.bundle.pem" |
+| wildcard_tls_key | Path to Base64-encoded TLS private key | "./secrets/complyt.io.key" |
 | vpn_ip_block | List of Allowed VPN static IP address for Istio Ingress Gateway access | ["205.234.190.10/32"] |
 
 ---
@@ -97,7 +97,10 @@ This document lists all available configuration variables for setting up the inf
 | :------------ | :----------- | :------------ |
 | vault_address | Vault external address | (No default) |
 | vault_token | Vault Token | (No default) |
-| apps_secrets | Secrets to load into applications with argocd-vault-plugin | (No default) |
+| analytics_env | Analytics app environment variables to load with argocd-vault-plugin | (No default) |
+| analytics-assessment_env | Assessment app environment variables to load with argocd-vault-plugin | (No default) |
+| internal_env | Internal app environment variables to load with argocd-vault-plugin | (No default) |
+| autofiling_env | Autofiling app environment variables to load with argocd-vault-plugin | (No default) |
 
 ---
 

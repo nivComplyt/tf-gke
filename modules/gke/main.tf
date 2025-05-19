@@ -10,9 +10,9 @@ resource "google_container_cluster" "primary" {
   network    = var.network
   subnetwork = var.subnetwork
 
-  # workload_identity_config {
-  #   workload_pool = "${var.project_id}.svc.id.goog"
-  # }
+  workload_identity_config {
+    workload_pool = "${var.project_id}.svc.id.goog"
+  }
 }
 
 resource "google_container_node_pool" "public_pool" {
@@ -36,9 +36,10 @@ resource "google_container_node_pool" "public_pool" {
     metadata = {
       disable-legacy-endpoints = "true"
     }
-    # workload_metadata_config {
-    #   mode = "GKE_METADATA"
-    # }
+    
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
   }
 
   autoscaling {

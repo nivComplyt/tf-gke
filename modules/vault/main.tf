@@ -69,5 +69,20 @@ resource "vault_kubernetes_auth_backend_role" "app_roles" {
 
 resource "vault_generic_secret" "analytics_secrets" {
   path      = "secret/gke-internal/analytics"
-  data_json = jsonencode(var.apps_secrets)
+  data_json = jsonencode(var.analytics_env)
+}
+
+resource "vault_generic_secret" "assessment_secrets" {
+  path      = "secret/gke-internal/analytics-assessment"
+  data_json = jsonencode(var.analytics-assessment_env)
+}
+
+resource "vault_generic_secret" "internal_secrets" {
+  path      = "secret/gke-internal/internal"
+  data_json = jsonencode(var.internal_env)
+}
+
+resource "vault_generic_secret" "autofiling_secrets" {  
+  path      = "secret/gke-internal/autofiling"
+  data_json = jsonencode(var.autofiling_env)
 }

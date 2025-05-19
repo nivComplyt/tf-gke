@@ -2,7 +2,6 @@
 variable "project_id" {
   description = "The project ID to host the cluster in"
   type        = string
-  default     = "complyt-dev"
 }
 
 variable "region" {
@@ -142,8 +141,8 @@ variable "apps" {
       service_port = 3000
       service_name = "internal-internal"
     }
-    assessment = {
-      namespace    = "assessment"
+    analytics-assessment = {
+      namespace    = "analytics-assessment"
       service_port = 80
       service_name = "analytics-assessment-service"
     }
@@ -165,7 +164,7 @@ variable "istio_version" {
 variable "inject_namespaces" {
   description = "List of namespaces to label for automatic Istio sidecar injection"
   type        = list(string)
-  default     = ["argocd"]
+  default     = ["argocd", "analytics", "assessment", "internal", "autofiling", "grafana"]
 }
 
 variable "wildcard_tls_secret" {
@@ -178,14 +177,14 @@ variable "wildcard_tls_crt" {
   description = "Path to Base64-encoded TLS certificate"
   type        = string
   sensitive   = true
-  default     = "./secrets/wildcard-tls.crt"
+  default     = "./secrets/complyt.io.bundle.pem"
 }
 
 variable "wildcard_tls_key" {
   description = "Path to Base64-encoded TLS private key"
   type        = string
   sensitive   = true
-  default     = "./secrets/wildcard-tls.key"
+  default     = "./secrets/complyt.io.key"
 }
 
 variable "vpn_ip_block" {
@@ -284,8 +283,26 @@ variable "vault_token" {
   sensitive   = true
 }
 
-variable "apps_secrets" {
-  description = "Secrets to load into applications with argocd-vault-plugin"
+variable "analytics_env" {
+  description = "Analytics app environment variables to load with argocd-vault-plugin"
+  type        = map(string)
+  sensitive   = true
+}
+
+variable "analytics-assessment_env" {
+  description = "Assessment app environment variables to load with argocd-vault-plugin"
+  type        = map(string)
+  sensitive   = true
+}
+
+variable "internal_env" {
+  description = "Internal app environment variables to load with argocd-vault-plugin"
+  type        = map(string)
+  sensitive   = true
+}
+
+variable "autofiling_env" {
+  description = "Autofiling app environment variables to load with argocd-vault-plugin"
   type        = map(string)
   sensitive   = true
 }

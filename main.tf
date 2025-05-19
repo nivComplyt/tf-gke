@@ -106,10 +106,13 @@ module "monitoring" {
 module "vault" {
   source = "./modules/vault"
 
-  kubernetes_host    = "https://${module.gke.cluster_endpoint}"
-  kubernetes_ca_cert = base64decode(module.gke.cluster_ca_certificate)
-  apps               = var.apps
-  apps_secrets       = var.apps_secrets
+  kubernetes_host          = "https://${module.gke.cluster_endpoint}"
+  kubernetes_ca_cert       = base64decode(module.gke.cluster_ca_certificate)
+  apps                     = var.apps
+  analytics_env            = var.analytics_env
+  analytics-assessment_env = var.analytics-assessment_env
+  internal_env             = var.internal_env
+  autofiling_env           = var.autofiling_env
 
   providers = {
     helm       = helm

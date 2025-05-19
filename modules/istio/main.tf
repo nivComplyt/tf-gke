@@ -11,17 +11,7 @@ resource "helm_release" "istio_base" {
   version    = var.istio_version
   namespace  = "istio-system"
   create_namespace = true
-
-  values = [
-    yamlencode({
-      global = {
-        proxy = {
-          accessLogEncoding = "JSON"
-          accessLogFormat   = "{\"start_time\":\"%START_TIME%\",\"method\":\"%REQ(:METHOD)%\",\"path\":\"%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%\",\"protocol\":\"%PROTOCOL%\",\"response_code\":\"%RESPONSE_CODE%\",\"response_flags\":\"%RESPONSE_FLAGS%\",\"bytes_received\":\"%BYTES_RECEIVED%\",\"bytes_sent\":\"%BYTES_SENT%\",\"duration\":\"%DURATION%\",\"user_agent\":\"%REQ(USER-AGENT)%\",\"upstream_host\":\"%UPSTREAM_HOST%\"}"
-        }
-      }
-    })
-  ]
+  skip_crds = true
 }
 
 resource "helm_release" "istiod" {
@@ -31,14 +21,13 @@ resource "helm_release" "istiod" {
   version    = var.istio_version
   namespace  = "istio-system"
   timeout    = 360
+  depends_on = [helm_release.istio_base]
 
   values = [
     yamlencode({
       tolerations = var.arm64_tolerations
     })
   ]
-
-  depends_on = [helm_release.istio_base]
 }
 
 resource "helm_release" "istio_ingress" {
@@ -137,6 +126,7 @@ resource "helm_release" "istio_ingress" {
 }
 
 resource "kubernetes_manifest" "global_gateway" {
+  depends_on = [helm_release.istio_base]
   manifest = {
     apiVersion = "networking.istio.io/v1beta1"
     kind       = "Gateway"
@@ -159,9 +149,7 @@ resource "kubernetes_manifest" "global_gateway" {
             mode           = "SIMPLE"
             credentialName = var.wildcard_tls_secret
           }
-          hosts = [
-            "*.complyt.cloud"
-          ]
+          hosts = ["*.complyt.io"]
         }
       ]
     }
@@ -169,6 +157,7 @@ resource "kubernetes_manifest" "global_gateway" {
 }
 
 resource "kubernetes_manifest" "sidecar_egress_all" {
+  depends_on = [helm_release.istio_base]
   manifest = {
     apiVersion = "networking.istio.io/v1beta1"
     kind       = "Sidecar"
@@ -186,9 +175,22 @@ resource "kubernetes_manifest" "sidecar_egress_all" {
   }
 }
 
-resource "kubernetes_manifest" "inject_labels" {
-  for_each = toset(var.inject_namespaces)
+resource "kubernetes_namespace" "app_namespaces" {
+  for_each = {
+    for app, config in var.apps : config.namespace => config
+  }
 
+  metadata {
+    name = each.key
+    labels = {
+      "istio-injection" = "enabled"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "inject_labels" {
+  depends_on = [helm_release.istio_base]
+  for_each = toset(var.inject_namespaces)
   manifest = {
     apiVersion = "v1"
     kind       = "Namespace"
@@ -215,8 +217,11 @@ resource "kubernetes_secret" "wildcard_tls" {
 }
 
 resource "kubernetes_manifest" "virtualservice_app" {
+  depends_on = [
+    kubernetes_namespace.app_namespaces,
+    helm_release.istio_base
+  ]
   for_each = var.apps
-
   manifest = {
     apiVersion = "networking.istio.io/v1beta1"
     kind       = "VirtualService"
@@ -225,7 +230,7 @@ resource "kubernetes_manifest" "virtualservice_app" {
       namespace = each.value.namespace
     }
     spec = {
-      hosts    = ["${each.key}.complyt.cloud"]
+      hosts    = ["${each.key}-internal.complyt.io"]
       gateways = ["istio-ingress/complyt-cloud-gateway"]
       http = [
         {
@@ -253,6 +258,7 @@ resource "kubernetes_manifest" "virtualservice_app" {
 }
 
 resource "kubernetes_manifest" "authorization_policy_nordlayer" {
+  depends_on = [helm_release.istio_base]
   manifest = {
     apiVersion = "security.istio.io/v1beta1"
     kind       = "AuthorizationPolicy"
